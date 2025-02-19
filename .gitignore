@@ -1,0 +1,16 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+
+# Credentials and tokens
+credentials.json
+token.pickle
+
+# IDE specific files (optional)
+.vscode/
+.idea/
