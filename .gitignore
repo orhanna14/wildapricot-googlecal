@@ -5,3 +5,4 @@ token.pickle
 __pycache__/
 venv/
 *.pyc
+credentials.json
