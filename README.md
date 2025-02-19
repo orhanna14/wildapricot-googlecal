@@ -61,6 +61,6 @@ Use Task Scheduler to run daily at midnight:
 - `token.pickle`: Google OAuth token (not in git)
 
 ## Notes
-- The script will clear all events and resync to avoid duplicates
+- You may need to modify the script will clear all events and resync to avoid duplicates
 - Runs once daily by default
 - Logs sync results to console
