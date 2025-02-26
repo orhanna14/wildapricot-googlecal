@@ -15,13 +15,15 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 WILD_APRICOT_API_URL = "https://api.wildapricot.org/v2.2"
 
 def clean_description(html_description):
-    """Extract text from HTML description and clean it."""
+    """Clean the HTML description while preserving bold formatting."""
     soup = BeautifulSoup(html_description, 'html.parser')
-    text = soup.get_text(separator='\n').strip()
     
-    # Remove extra line breaks and whitespace
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    return '\n'.join(lines)
+    # Remove unwanted tags or attributes (optional)
+    for tag in soup(['script', 'style']):  # Remove <script> and <style> tags
+        tag.decompose()
+    
+    # Return the cleaned HTML
+    return str(soup)
     
 
 class WildApricotAPI:
@@ -212,7 +214,7 @@ def sync_events(wa_api, google_service, calendar_id, account_id, filter_keywords
         # Create Google Calendar event
         calendar_event = {
             'summary': title,
-            'description': f"{description}\n\nOriginal event: {original_event_url}",
+            'description': f"{description}\n\n<b>Original event:</b> <a href='{original_event_url}'>{original_event_url}</a>",
             'start': {
                 'dateTime': start_time,
                 'timeZone': 'America/Los_Angeles',
