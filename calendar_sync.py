@@ -15,8 +15,12 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 WILD_APRICOT_API_URL = "https://api.wildapricot.org/v2.2"
 
 def clean_description(html_description):
-    """Clean the HTML description while preserving bold formatting."""
+    """Clean the HTML description while preserving bold formatting and removing images."""
     soup = BeautifulSoup(html_description, 'html.parser')
+    
+    # Remove <img> tags (including base64-encoded images)
+    for img in soup.find_all('img'):
+        img.decompose()  # Remove the <img> tag
     
     # Remove unwanted tags or attributes (optional)
     for tag in soup(['script', 'style']):  # Remove <script> and <style> tags
