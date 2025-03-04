@@ -1,13 +1,32 @@
 function cleanDescription(htmlDescription) {
-  // Since Apps Script doesn't have BeautifulSoup, we'll use a simpler approach
-  // Remove basic HTML tags but preserve formatting
   return htmlDescription
-    .replace(/<img[^>]*>/g, '') // Remove img tags
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove style tags
-    .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newlines
-    .replace(/<p>/gi, '') // Remove opening p tags
-    .replace(/<\/p>/gi, '\n') // Convert closing p tags to newlines
+    // Remove white text styling
+    .replace(/color:\s*#ffffff/gi, '')
+    .replace(/color:\s*white/gi, '')
+    .replace(/color:\s*rgb\(255,\s*255,\s*255\)/gi, '')
+    .replace(/<font[^>]*color=['"]?#ffffff['"]?[^>]*>/gi, '')
+    .replace(/<font[^>]*color=['"]?white['"]?[^>]*>/gi, '')
+    .replace(/style=["'][^"']*color:\s*#ffffff[^"']*["']/gi, '')
+    .replace(/style=["'][^"']*color:\s*white[^"']*["']/gi, '')
+    // Clean up HTML elements
+    .replace(/<img[^>]*>/g, '')
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    // Handle line breaks and paragraphs
+    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '\n') // Convert double breaks to single newline
+    .replace(/<br\s*\/?>/gi, '\n') // Convert single breaks to newline
+    .replace(/<p>\s*<\/p>/gi, '') // Remove empty paragraphs
+    .replace(/<p[^>]*>/gi, '') // Remove opening p tags
+    .replace(/<\/p>/gi, '\n') // Convert closing p tags to single newline
+    .replace(/<div[^>]*>/gi, '') // Remove div openings
+    .replace(/<\/div>/gi, '\n') // Convert div closings to newline
+    // Remove other formatting
+    .replace(/<font[^>]*>/gi, '')
+    .replace(/<\/font>/gi, '')
+    // Clean up whitespace
+    .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace triple+ newlines with double
+    .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
+    .replace(/^\s+|\s+$/gm, '') // Trim each line
     .trim();
 }
 
@@ -47,6 +66,19 @@ function syncEvents(waApi, calendarId, accountId, filteredEvents, startIndex = 0
       const title = event.Name || 'Untitled Event';
       console.log(`Processing event: ${title}`);
       
+      // Fetch detailed event information
+      console.log(`Fetching details for event ID: ${event.Id}`);
+      const eventDetailsResponse = UrlFetchApp.fetch(`${waApi.apiUrl}/accounts/${accountId}/Events/${event.Id}`, {
+        headers: {
+          'Authorization': 'Bearer ' + waApi.accessToken
+        }
+      });
+      
+      // Add delay after API call
+      Utilities.sleep(100);
+      
+      const eventDetails = JSON.parse(eventDetailsResponse.getContentText());
+      
       // Parse dates using the full ISO string
       const startTime = new Date(event.StartDate);
       const endTime = new Date(event.EndDate);
@@ -55,19 +87,32 @@ function syncEvents(waApi, calendarId, accountId, filteredEvents, startIndex = 0
       console.log(`End time: ${endTime.toISOString()}`);
       
       // Extract and clean the event description
-      const description = event.Details?.DescriptionHtml || 'No description available.';
+      const description = eventDetails.Details?.DescriptionHtml || 'No description available.';
       const cleanedDescription = cleanDescription(description);
       
       // Create the original event link
       const eventId = event.Id;
       const originalEventUrl = `https://ggtc.org/event-${eventId}`;
       
+      // Format registration information
+      let registrationInfo = '';
+      if (eventDetails.RegistrationEnabled) {
+        registrationInfo = `\n\nRegistration Information:`;
+        if (eventDetails.RegistrationsLimit) {
+          registrationInfo += `\nCapacity: ${eventDetails.RegistrationsLimit}`;
+        }
+        registrationInfo += `\nConfirmed Registrations: ${eventDetails.ConfirmedRegistrationsCount}`;
+        if (eventDetails.WaitListEnabled) {
+          registrationInfo += `\nWaitlist: ${eventDetails.WaitListRegistrationCount}`;
+        }
+      }
+      
       // Check if it's a training program
       const isTrainingProgram = title.toLowerCase().includes('training');
       
-      // Create event options
+      // Create event options with enhanced description
       const eventOptions = {
-        description: `${cleanedDescription}\n\n<b>Original event:</b> <a href='${originalEventUrl}'>${originalEventUrl}</a>`,
+        description: `${cleanedDescription}${registrationInfo}\n\n<b>Original event:</b> <a href='${originalEventUrl}'>${originalEventUrl}</a>`,
         location: event.Location || ''
       };
       
