@@ -1,66 +1,39 @@
 # Wild Apricot to Google Calendar Sync
 
-This script synchronizes events from a Wild Apricot organization to a Google Calendar. It's designed to run daily to keep calendars in sync.
+Automatically synchronizes events from Wild Apricot to Google Calendar using Google Apps Script.
+
+## Features
+- Syncs events from Wild Apricot to Google Calendar
+- Filters for events from the last 7 days and future
+- Includes full event descriptions and registration information
+- Handles HTML formatting and cleanup
+- Batch processing to work within Apps Script limits
+- Email notifications for sync progress
 
 ## Setup
+1. Create a new Google Apps Script project
+2. Set up the following script properties:
+   - `WILD_APRICOT_API_KEY`: Your Wild Apricot API key
+   - `GOOGLE_CALENDAR_ID`: The ID of your target Google Calendar
+3. Copy the contents of `Main.gs` and `CalendarSync.gs` to your project
+4. Enable the necessary Google Apps Script services:
+   - Calendar API
+   - Gmail API
 
-1. **Clone the repository**
-   ```bash
-   git clone [your-repo-url]
-   cd [repo-name]
-   ```
+## Usage
+1. Run `main()` to initialize the sync
+2. Run `processBatch()` multiple times to process all events
+3. Monitor progress through logs and email notifications
 
-2. **Create and activate virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+## Functions
+- `main()`: Initializes the sync process
+- `processBatch()`: Processes a batch of events
+- `clearCalendar()`: Clears all events from the calendar
+- `resetSyncState()`: Resets the sync state
+- `checkTriggers()`: Checks current trigger status
 
-3. **Install dependencies**
-   ```bash
-   python -m pip install -r requirements.txt
-   ```
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-4. **Set up credentials**
-   - Create a `.env` file in the root directory with:
-     ```
-     WILD_APRICOT_API_KEY=your_api_key
-     WILD_APRICOT_ACCOUNT_ID=your_account_id
-     GOOGLE_CALENDAR_ID=your_calendar_id
-     ```
-   - Get Google Calendar credentials:
-     1. Go to Google Cloud Console
-     2. Create a project and enable Google Calendar API
-     3. Create OAuth 2.0 credentials
-     4. Download as `credentials.json` and place in project root
-
-5. **First run**
-   ```bash
-   python calendar_sync.py
-   ```
-   - Follow the Google OAuth flow in your browser
-   - This will create `token.pickle` for future authentication
-
-## Running Daily Sync
-
-### Linux/Mac
-Add to crontab:
-```bash
-0 0 cd /path/to/project && /path/to/venv/bin/python calendar_sync.py
-```
-
-### Windows
-Use Task Scheduler to run daily at midnight:
-- Program: `C:\Path\To\venv\Scripts\python.exe`
-- Arguments: `C:\Path\To\calendar_sync.py`
-
-## Files
-- `calendar_sync.py`: Main script
-- `.env`: Environment variables (not in git)
-- `credentials.json`: Google OAuth credentials (not in git)
-- `token.pickle`: Google OAuth token (not in git)
-
-## Notes
-- You may need to modify the script will clear all events and resync to avoid duplicates
-- Runs once daily by default
-- Logs sync results to console
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
