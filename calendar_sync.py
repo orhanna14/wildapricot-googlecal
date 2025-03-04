@@ -68,9 +68,9 @@ class WildApricotAPI:
         else:
             cached_events = {}
         
-        # Get events starting from today
-        today = datetime.now().strftime("%Y-%m-%d")
-        url = f"{WILD_APRICOT_API_URL}/accounts/{account_id}/events?$filter=StartDate ge {today}"
+        # Get events starting from 7 days ago to catch recently started programs
+        seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        url = f"{WILD_APRICOT_API_URL}/accounts/{account_id}/events?$filter=StartDate ge {seven_days_ago}"
         
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
@@ -214,6 +214,9 @@ def sync_events(wa_api, google_service, calendar_id, account_id, filter_keywords
         # Fix the original event link
         event_id = event.get('Id')
         original_event_url = f"https://ggtc.org/event-{event_id}"
+
+        # Check if the event is a multi-week training program
+        is_training_program = "training" in title.lower()  # Customize this condition as needed
         
         # Create Google Calendar event
         calendar_event = {
@@ -236,6 +239,10 @@ def sync_events(wa_api, google_service, calendar_id, account_id, filter_keywords
                 'title': 'Wild Apricot - GGTC'
             }
         }
+
+        # Mark training programs as "Free"
+        if is_training_program:
+            calendar_event['transparency'] = 'transparent'
         
         # Check if the event already exists
         event_key = (title, start_time)
