@@ -50,7 +50,7 @@ function main() {
     // Get API credentials and initialize
     const waApi = getWildApricotAPI();
     const accountId = getAccountId(waApi);
-    const calendarId = scriptProperties.getProperty('CALENDAR_ID');
+    const calendarId = scriptProperties.getProperty('GOOGLE_CALENDAR_ID');
     
     if (!calendarId) {
       throw new Error('Calendar ID not set in script properties');
@@ -478,4 +478,63 @@ function syncEvents(waApi, calendarId, accountId, filteredEvents, startIndex) {
   }
   
   return results;
+}
+
+function createDailyTrigger() {
+  try {
+    // Delete any existing triggers first
+    console.log('Checking for existing triggers...');
+    const triggers = ScriptApp.getProjectTriggers();
+    if (triggers.length > 0) {
+      console.log(`Found ${triggers.length} existing trigger(s). Removing...`);
+      triggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
+    }
+    
+    // Create a new trigger to run daily
+    console.log('Creating new daily trigger...');
+    ScriptApp.newTrigger('main')
+      .timeBased()
+      .everyDays(1)
+      .atHour(1)     // Run at 1 AM
+      .create();
+    
+    console.log('Daily sync trigger created successfully');
+    
+    // Verify the trigger
+    const newTriggers = ScriptApp.getProjectTriggers();
+    console.log(`\nVerifying trigger setup:`);
+    console.log(`Created ${newTriggers.length} trigger(s):`);
+    newTriggers.forEach(trigger => {
+      console.log(`- Function: ${trigger.getHandlerFunction()}`);
+      console.log(`  Type: ${trigger.getEventType()}`);
+      console.log(`  Time: Daily at 1 AM`);
+    });
+    
+    // Send confirmation email
+    sendEmailNotification(
+      'Calendar Sync - Daily Trigger Setup',
+      `The Wild Apricot calendar sync has been scheduled to run daily at 1 AM.
+      
+You will receive email notifications when:
+- The daily sync starts
+- Each batch of events is processed
+- The sync completes
+- Any errors occur
+
+No manual intervention is needed unless you receive an error notification.`
+    );
+    
+  } catch (error) {
+    console.error('Error setting up trigger:', error);
+    console.error('Stack trace:', error.stack);
+    
+    sendEmailNotification(
+      'Calendar Sync - Trigger Setup Error',
+      `Failed to set up daily trigger:
+Error: ${error.message}
+Stack trace: ${error.stack}
+
+Please try running createDailyTrigger() again.`
+    );
+  }
 } 
